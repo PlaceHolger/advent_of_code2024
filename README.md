@@ -1,2 +1,2 @@
-# advent_of_code2024
+# advent_of_code_2024
 https://adventofcode.com/2024
