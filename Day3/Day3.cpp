@@ -26,8 +26,11 @@ int main(int argc, char* argv[])
     if constexpr (!isPart1)
     {
         //We remove everything between don't() and do()
-        std::regex removePattern(R"(don't\(\).*?do\(\))");
-        data = std::regex_replace(data, removePattern, "");
+        std::regex removePattern(R"(don't\(\)(.*?)do\(\))");
+        data = std::regex_replace(data, removePattern, "XXXXXX");
+        //and if there is a don't block at the end of the string, we remove it too
+        std::regex removePattern2(R"(don't\(\)(.*))");
+        data = std::regex_replace(data, removePattern2, "XXXXXX");
     }
     
     int64_t result = 0;
