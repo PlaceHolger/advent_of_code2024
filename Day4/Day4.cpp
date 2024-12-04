@@ -5,6 +5,8 @@
 
 //https://adventofcode.com/2024/day/4
 
+constexpr bool IS_PART1 = false;
+
 static std::vector<std::string> s_Data;
 
 bool ReadData()
@@ -22,10 +24,8 @@ bool ReadData()
     }
 }
 
-int main(int argc, char* argv[])
+void Part1_FindXMAS()
 {
-    ReadData();
-
     const int NUM_ROWS = s_Data.size();
     const int NUM_COLS = s_Data[0].size();
     constexpr char SEARCH_WORD[] = "XMAS";
@@ -75,6 +75,55 @@ int main(int argc, char* argv[])
     }
 
     std::cout << "Findings: " << count << std::endl;
+}
+
+void Part2_FindXMas()
+{
+    //here we can find one of these 4 patterns: (where . can be any other character)
+    //  M.S		S.S		S.M		M.M                                            
+    //  .A.     .A.     .A.     .A.                        
+    //  M.S     M.M     S.M     S.S
+    //approach first we start looking for an A and then check the 4 diagonals for the other characters
+
+    const int NUM_ROWS = s_Data.size();
+    const int NUM_COLS = s_Data[0].size();
+
+    int count = 0;
+    for (int row = 1; row < NUM_ROWS - 1; ++row)
+    {
+        for (int col = 1; col < NUM_COLS - 1; ++col)
+        {
+            if (s_Data[row][col] == 'A') //okay, this might be a pattern, let's check both diagonals
+            {
+                if (s_Data[row - 1][col + 1] == 'M' && s_Data[row + 1][col - 1] == 'S'      //M.M
+                    && s_Data[row - 1][col - 1] == 'M' && s_Data[row + 1][col + 1] == 'S')  //.A.
+                    count++;                                                                //S.S
+                
+                else if (s_Data[row - 1][col + 1] == 'S' && s_Data[row + 1][col - 1] == 'M' //S.S
+                    && s_Data[row - 1][col - 1] == 'S' && s_Data[row + 1][col + 1] == 'M')  //.A.
+                    count++;                                                                //M.M                               
+                
+                else if (s_Data[row - 1][col + 1] == 'S' && s_Data[row + 1][col - 1] == 'M' //M.S
+                    && s_Data[row - 1][col - 1] == 'M' && s_Data[row + 1][col + 1] == 'S')  //.A.
+                    count++;                                                                //M.S   
+                
+                else if (s_Data[row - 1][col + 1] == 'M' && s_Data[row + 1][col - 1] == 'S' //S.M
+                    && s_Data[row - 1][col - 1] == 'S' && s_Data[row + 1][col + 1] == 'M')  //.A.
+                    count++;                                                                //S.M   
+            }
+        }
+    }
+    std::cout << "Findings: " << count << std::endl;
+}
+
+int main(int argc, char* argv[])
+{
+    ReadData();
+
+    if (IS_PART1)
+        Part1_FindXMAS();
+    else
+        Part2_FindXMas();
     
     return 0;
 }
