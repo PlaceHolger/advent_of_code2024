@@ -23,6 +23,7 @@ int main(int argc, char* argv[])
     std::stringstream buffer;
     buffer << file.rdbuf();
     std::string data = buffer.str();
+    
     if constexpr (!isPart1)
     {
         //We remove everything between don't() and do()
