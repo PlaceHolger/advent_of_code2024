@@ -24,13 +24,18 @@ void generatePermutations(const string& ops, string current, int n, vector<strin
 
 unordered_map<int, vector<string>> permutations;  //maps number of numbers to the permutations
 
+//#define IS_PART1
+
 int main(int argc, char* argv[])
 {
-    string operations = "+*";
-    //vector<string> permutations;
+#if defined(IS_PART1)
+    const string operations = "+*";
+#else
+    const string operations = "+*|";
+#endif
 
     //iterate over data and count occurrences in the second column
-    constexpr auto& data = testData; //testData;
+    constexpr auto& data = realData; //testData;
     uint64_t sumCorrectValues = 0;
     for (const auto& numbers : data)
     {
@@ -52,9 +57,15 @@ int main(int argc, char* argv[])
                 {
                     result += numbers[i + 2];
                 }
-                else
+                else if (perm[i] == '*')
                 {
                     result *= numbers[i + 2];
+                }
+                else if (perm[i] == '|')
+                {
+                    //this operation concatenates the numbers left with the current, so 73|45 = 7345 or 421|123 = 421123
+                    int numDigits = static_cast<int>(log10(numbers[i + 2])) + 1;
+                    result = result * static_cast<int>(pow(10, numDigits)) + numbers[i + 2];
                 }
 
                 if (result > expectedResults)
