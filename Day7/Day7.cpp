@@ -1,5 +1,6 @@
 //https://adventofcode.com/2024/day/7
 
+#include <cassert>
 #include <iostream>
 #include <string>
 #include <unordered_map>
@@ -64,8 +65,15 @@ int main(int argc, char* argv[])
                 else if (perm[i] == '|')
                 {
                     //this operation concatenates the numbers left with the current, so 73|45 = 7345 or 421|123 = 421123
-                    int numDigits = static_cast<int>(log10(numbers[i + 2])) + 1;
-                    result = result * static_cast<int>(pow(10, numDigits)) + numbers[i + 2];
+                    // int numDigits = static_cast<int>(log10(numbers[i + 2])) + 1;
+                    // result = result * static_cast<int>(pow(10, numDigits)) + numbers[i + 2];
+                    const auto rightNumber = numbers[i + 2];
+                    if (rightNumber < 10)
+                        result = result * 10 + rightNumber;
+                    else if (rightNumber < 100)
+                        result = result * 100 + rightNumber;
+                    else
+                        result = result * 1000 + rightNumber;
                 }
 
                 if (result > expectedResults)
