@@ -6,11 +6,26 @@
 
 #include "Day9Data.h"
 
-constexpr int EMPTY_SPACE = -1;
+constexpr int EMPTY_SPACE = -666;
+
+// std::string ReadDataFromFile()
+// {
+//     std::ifstream file("data.txt");
+//     if (!file)
+//     {
+//         std::cerr << "Unable to open file\n";
+//         return "";
+//     }
+//
+//     //Read the whole file into a string
+//     static std::string line;
+//     std::getline(file, line);
+//     return line;
+// }
 
 int main(int argc, char* argv[])
 {
-    constexpr auto& data = realData;
+    const char* data = realData; //ReadDataFromFile;
     const auto NUM_DATA = strlen(data);
     std::vector<int> result;
     result.reserve(NUM_DATA * 5); //rough estimation
@@ -19,7 +34,7 @@ int main(int argc, char* argv[])
     bool isFile = true;
     for (size_t i = 0; i < NUM_DATA; ++i)
     {
-        int currentAmount = testData[i] - '0';
+        int currentAmount = data[i] - '0';
         if (isFile)
         {
             //add x times the current item to the result
@@ -69,7 +84,7 @@ int main(int argc, char* argv[])
 
     //now we need to calculate the score, we iterate over the result and calculate the score, for each position its current ID * its position
     uint64_t score = 0;
-    for (size_t i = 0; i < result.size(); ++i)
+    for (uint64_t i = 0; i < result.size(); ++i)
     {
         score += result[i] * i;
     }
