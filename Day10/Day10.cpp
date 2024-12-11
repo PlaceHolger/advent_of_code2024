@@ -1,10 +1,10 @@
 #include <iostream>
 #include <vector>
-#include <set>
+#include <queue>
+#include <unordered_set>
 
 //#define USE_TEST_DATA
-
-#include <unordered_set>
+//#define IS_PART2
 
 #include "Day10Data.h"
 
@@ -18,11 +18,6 @@ struct Vector2
     bool operator==(const Vector2& other) const
     {
         return x == other.x && y == other.y;
-    }
-
-    bool operator<(const Vector2& other) const
-    {
-        return x < other.x || (x == other.x && y < other.y);
     }
 };
 
@@ -40,18 +35,29 @@ constexpr int MAP_HEIGHT = std::size(map);
 
 constexpr Vector2 directions[4] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
 
-void dfs(int x, int y, int currentHeight, unordered_set<Vector2>& visited, set<Vector2>& reachableNines)
+// Check if a pos is within bounds
+bool isValid(const Vector2& pos)
 {
-    if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT || visited.count({x, y}) || map[x][y] != currentHeight)
+    return pos.x >= 0 && pos.x < MAP_HEIGHT && pos.y >= 0 && pos.y < MAP_WIDTH;
+}
+
+void dfs(int x, int y, int currentHeight, unordered_set<Vector2>& visited, vector<Vector2>& reachableNines)
+{
+    Vector2 newPos = {x, y};
+    if (!isValid(newPos)
+#if !defined(IS_PART2) //for part2 we want to find all ways to reach the 9
+        || visited.find(newPos) != visited.end()
+#endif
+        || map[x][y] != currentHeight)
     {
         return;
     }
 
-    visited.insert({x, y});
+    visited.insert(newPos);
 
     if (currentHeight == 9)
     {
-        reachableNines.insert({x, y});
+        reachableNines.push_back(newPos);
         return;
     }
 
@@ -66,7 +72,7 @@ void dfs(int x, int y, int currentHeight, unordered_set<Vector2>& visited, set<V
 int calculateTrailheadScore(int startX, int startY)
 {
     unordered_set<Vector2> visited;
-    set<Vector2> reachableNines;
+    vector<Vector2> reachableNines;
     dfs(startX, startY, 0, visited, reachableNines);
     return reachableNines.size();
 }
