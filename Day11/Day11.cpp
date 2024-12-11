@@ -1,6 +1,7 @@
 //https://adventofcode.com/2024/day/11
 
 #include <iostream>
+#include <unordered_map>
 #include <vector>
 
 //static std::vector<uint64_t> data = { 0, 1, 10, 99, 999 };
@@ -18,63 +19,90 @@ static int getNumDigits(uint64_t num)
     return numDigits;
 }
 
-void SimulateBlink(uint64_t stone, std::vector<uint64_t>& result)
+struct Result
+{
+    static constexpr uint64_t INVALID = -1;
+    uint64_t stone1 = INVALID;
+    uint64_t stone2 = INVALID;
+};
+
+Result SimulateBlink(uint64_t stone)
 {
     //rules:
-    // If the stone is engraved with the number 0, it is replaced by a stone engraved with the number 1.
-    // If the stone is engraved with a number that has an even number of digits, it is replaced by two stones. The left half of the digits are engraved on the new left stone, and the right half of the digits are engraved on the new right stone. (The new numbers don't keep extra leading zeroes: 1000 would become stones 10 and 0.)
-    // If none of the other rules apply, the stone is replaced by a new stone; the old stone's number multiplied by 2024 is engraved on the new stone.
-    if (stone == 0)
+    // 1. If the stone is engraved with the number 0, it is replaced by a stone engraved with the number 1.
+    // 2. If the stone is engraved with a number that has an even number of digits, it is replaced by two stones. The left half of the digits are engraved on the new left stone, and the right half of the digits are engraved on the new right stone. (The new numbers don't keep extra leading zeroes: 1000 would become stones 10 and 0.)
+    // 3. If none of the other rules apply, the stone is replaced by a new stone; the old stone's number multiplied by 2024 is engraved on the new stone.
+    if (stone == 0) //rule 1
     {
-        result.push_back(1);
+        return {1, Result::INVALID};
     }
-    else
+
+    const int numDigits = getNumDigits(stone);
+    if (numDigits % 2 == 0) // 2
     {
-        const int numDigits = getNumDigits(stone);
-        if (numDigits % 2 == 0)
-        {
-            const int halfNumDigits = numDigits / 2;
-            const int divider = static_cast<int>(pow(10, halfNumDigits));
-            const int leftStone = stone / divider;
-            const int rightStone = stone % divider;
-            result.push_back(leftStone);
-            result.push_back(rightStone);
-        }
-        else
-        {
-            result.push_back(stone * 2024);
-        }
+        const int halfNumDigits = numDigits / 2;
+        const int divider = static_cast<int>(pow(10, halfNumDigits));
+        const uint64_t leftStone = stone / divider;
+        const uint64_t rightStone = stone % divider;
+        return {leftStone, rightStone};
     }
+
+    return {stone * 2024, Result::INVALID};  //3
 }
+
+constexpr bool IS_PART1 = false;
+
+std::unordered_map<uint64_t, Result> resultsCache; //stoneNumber, result
+
+std::unordered_map<uint64_t, uint64_t> stonesMap; //stoneNumber, amount
+std::unordered_map<uint64_t, uint64_t> stonesMap2; //stoneNumber, amount
 
 int main(int argc, char* argv[])
 {
-    constexpr int numSimulationSteps = 25;
-    std::vector<uint64_t> stones2;
+    constexpr int numSimulationSteps = (IS_PART1) ? 25 : 75;
 
-    std::vector<uint64_t>& result = stones2;
-    std::vector<uint64_t>& input = data;
+    //convert the data into our map-format
+    for (auto stone : data)
+    {
+        stonesMap[stone]++;
+    }
+
+    auto& inputMap = stonesMap;
+    auto& resultMap = stonesMap2;
     
     for (int i = 0; i < numSimulationSteps; i++)
     {
-        for (const auto stone : input)
+        for (const auto stone : inputMap)
         {
-            SimulateBlink(stone, result);
+            const auto cachedResult = resultsCache.find(stone.first);
+            Result result;
+            if (cachedResult != resultsCache.cend())
+            {
+                result = cachedResult->second;
+            }
+            else
+            {
+                result = SimulateBlink(stone.first);
+                resultsCache[stone.first] = result;
+            }
+
+            resultMap[result.stone1] += stone.second;
+            if (result.stone2 != Result::INVALID) {
+                resultMap[result.stone2] += stone.second;
+            }
         }
 
-        // //print the current state
-        // std::cout << "Step " << i << ": ";
-        // for (const auto stone : input)
-        // {
-        //     std::cout << stone << " ";
-        // }
-        // std::cout << std::endl;
+        // to count the number of stones, we have to add all the stones in the map
+        uint64_t totalStones = 0;
+        for (auto stone : resultMap)
+        {
+            totalStones += stone.second;
+        }
+        std::cout << "Step " << i << ": Stones: " << totalStones << " resultsCache " << resultsCache.size() << '\n';
 
-        input = result;
-        result.clear();        
+        std::swap(inputMap, resultMap);
+        resultMap.clear();
     }
 
-    std::cout << "Amount of stones: " << input.size() << std::endl;
-    
     return 0;
 }
