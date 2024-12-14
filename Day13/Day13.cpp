@@ -81,15 +81,16 @@ static int64_t determinant(int64_t a, int64_t b, int64_t c, int64_t d)
 int64_t calculate_min_cost(const ClawMachine& machine)
 {
     // Coefficients of the system
-    int64_t ax = machine.button_a.x, ay = machine.button_a.y;
-    int64_t bx = machine.button_b.x, by = machine.button_b.y;
-    int64_t px = machine.prize.x, py = machine.prize.y;
+    const int64_t ax = machine.button_a.x, ay = machine.button_a.y;
+    const int64_t bx = machine.button_b.x, by = machine.button_b.y;
+    const int64_t px = machine.prize.x, py = machine.prize.y;
 
     // Compute the determinant of the coefficient matrix
-    int64_t det = determinant(ax, bx, ay, by);
+    const int64_t det = determinant(ax, bx, ay, by);
 
     // If the determinant is zero, no solution exists
-    if (det == 0) return -1;
+    if (det == 0)
+        return -1;
 
     // Compute the determinants for Cramer's Rule
     const int64_t det_na = determinant(px, bx, py, by);
@@ -103,8 +104,9 @@ int64_t calculate_min_cost(const ClawMachine& machine)
         return -1;
 
     // Compute costs
-    int64_t cost_a = std::abs(na) * COST_BUTTON_A;
-    int64_t cost_b = std::abs(nb) * COST_BUTTON_B;
+    const int64_t cost_a = std::abs(na) * COST_BUTTON_A;
+    int64_t cost_b;
+    cost_b = std::abs(nb) * COST_BUTTON_B;
 
     std::cout << "Machine: " << machine.prize.x << ", " << machine.prize.y << " Button A presses: " << na << " Button B presses: " << nb << " Tokens: " << cost_a + cost_b << '\n';
 
