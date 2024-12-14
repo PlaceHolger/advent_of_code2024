@@ -21,7 +21,13 @@ struct Robot
     Vector2_i64 velocity;
 };
 
+#define PART_2
+
+#if defined(PART_2)
+constexpr int NUM_SIMULATED_SECONDS = 1000000;
+#else
 constexpr int NUM_SIMULATED_SECONDS = 100;
+#endif
 
 //#define USE_TEST_DATA
 
@@ -115,6 +121,30 @@ static void PrintMap()
         }
         std::cout << "\n";
     }
+    std::cout << std::endl;
+}
+
+void CheckForChristmasTree(int currentSecond)
+{
+    // probably there is a better way to detect the tree formation, but this is a brute force solution, which then also needs the user to verify... but it works for my data ; )
+    for (const auto& robot : robots)
+    {
+        int numRobotsInLine = 1;
+        for (const auto& otherRobot : robots)
+        {
+            if (robot.position.x == otherRobot.position.x + numRobotsInLine && robot.position.y == otherRobot.position.y)
+            {
+                numRobotsInLine++;
+            }
+        }
+        if (numRobotsInLine >= 6)
+        {
+            PrintMap();
+            std::cout << "Found a potential tree formation at " << robot.position.x << ", " << robot.position.y << " after " << currentSecond + 1 << " seconds" << std::endl;
+            std::cin.get(); //the user can verify if this is a tree formation, if not, just press enter to continue   
+            break;
+        }
+    }
 }
 
 int main(int argc, char* argv[])
@@ -126,9 +156,11 @@ int main(int argc, char* argv[])
     
     for (int i = 0; i < NUM_SIMULATED_SECONDS; ++i)
     {
-        std::cout << "After " << i + 1 << " seconds: \n";
+        std::cout << "After " << i + 1 << " seconds\n" ;
         MoveRobots(robots, 1);
-        //PrintMap();
+#if defined(PART_2)
+        CheckForChristmasTree(i);
+#endif
     }
 
     //After 100 seconds, we can count the number of robots in each quadrant
