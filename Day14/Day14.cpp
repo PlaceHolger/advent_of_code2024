@@ -2,6 +2,7 @@
 
 //https://adventofcode.com/2024/day/14
 
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <fstream>
@@ -67,13 +68,13 @@ static void MoveRobots(std::vector<Robot>& robots, int64_t seconds)
     //wrap around the edges
     for (auto& robot : robots)
     {
-        if (robot.position.x < 0)
+        while (robot.position.x < 0)  //not used at the moment, but if we need to simulate for larger periods of time, we can optimize this
             robot.position.x += MAP_WIDTH;
-        if (robot.position.x >= MAP_WIDTH)
+        while (robot.position.x >= MAP_WIDTH)
             robot.position.x -= MAP_WIDTH;
-        if (robot.position.y < 0)
+        while (robot.position.y < 0)
             robot.position.y += MAP_HEIGHT;
-        if (robot.position.y >= MAP_HEIGHT)
+        while (robot.position.y >= MAP_HEIGHT)
             robot.position.y -= MAP_HEIGHT;
     }
 }
@@ -127,22 +128,18 @@ static void PrintMap()
 void CheckForChristmasTree(int currentSecond)
 {
     // probably there is a better way to detect the tree formation, but this is a brute force solution, which then also needs the user to verify... but it works for my data ; )
+    int numRobotsInColumns[MAP_WIDTH] = { 0 };
+    int numRobotsInRows[MAP_HEIGHT] = { 0 };
     for (const auto& robot : robots)
     {
-        int numRobotsInLine = 1;
-        for (const auto& otherRobot : robots)
-        {
-            if (robot.position.x == otherRobot.position.x + numRobotsInLine && robot.position.y == otherRobot.position.y)
-            {
-                numRobotsInLine++;
-            }
-        }
-        if (numRobotsInLine >= 6)
+        numRobotsInColumns[robot.position.x]++;
+        numRobotsInRows[robot.position.y]++;
+
+        if (numRobotsInColumns[robot.position.x] >= 20 && numRobotsInRows[robot.position.y] >= 20) //for a tree there are probably a lot of robots in the same column and row
         {
             PrintMap();
-            std::cout << "Found a potential tree formation at " << robot.position.x << ", " << robot.position.y << " after " << currentSecond + 1 << " seconds" << std::endl;
+            std::cout << "Found a potential tree formation" << currentSecond + 1 << " seconds" << std::endl;
             std::cin.get(); //the user can verify if this is a tree formation, if not, just press enter to continue   
-            break;
         }
     }
 }
