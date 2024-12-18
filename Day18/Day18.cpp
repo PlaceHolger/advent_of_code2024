@@ -30,9 +30,9 @@ char GetTile(Vector2 pos)
     return s_Map[pos.y][pos.x];
 }
 
-void SimulateFallingBytes(int numBytes)
+void SimulateFallingBytes(int endBit, int startBit = 0)
 {
-    for (int i = 0; i < numBytes && i < s_NumIncomingData; i++)
+    for (int i = startBit; i < endBit && i < s_NumIncomingData; i++)
     {
         SetTile(s_IncomingData[i], CORRUPTED);
     }
@@ -87,11 +87,24 @@ struct PathNode
 };
 PathNode pathNodes[MAP_HEIGHT][MAP_WIDTH];
 
-std::vector<Vector2> FindPath(Vector2 startPos, Vector2 endPos)
+std::vector<Vector2>& FindPath(Vector2 startPos, Vector2 endPos)
 {
+    //clear the path nodes
+    for (int y = 0; y < MAP_HEIGHT; ++y)
+    {
+        for (int x = 0; x < MAP_WIDTH; ++x)
+        {
+            pathNodes[y][x].distance = -1;
+            pathNodes[y][x].pPreviousNode = nullptr;
+            pathNodes[y][x].pos = {x, y}; //todo: only do once
+        }
+    }
+    static std::vector<Vector2> path;
+    path.clear();
+    
     std::priority_queue<PathNode> queue;
     pathNodes[startPos.y][startPos.x].distance = 0;
-    pathNodes[startPos.y][startPos.x].pos = startPos;
+    //pathNodes[startPos.y][startPos.x].pos = startPos;
     queue.push(pathNodes[startPos.y][startPos.x]);
 
     while (!queue.empty())
@@ -103,7 +116,6 @@ std::vector<Vector2> FindPath(Vector2 startPos, Vector2 endPos)
 
         if (currentPos == endPos)
         {
-            std::vector<Vector2> path;
             while (currentPos != startPos) //backtrack the path
             {
                 path.push_back(currentPos);
@@ -126,28 +138,51 @@ std::vector<Vector2> FindPath(Vector2 startPos, Vector2 endPos)
             if (newDistance < pathNodes[nextPos.y][nextPos.x].distance)
             {
                 pathNodes[nextPos.y][nextPos.x].distance = newDistance;
-                pathNodes[nextPos.y][nextPos.x].pos = nextPos;
+                //pathNodes[nextPos.y][nextPos.x].pos = nextPos;
                 pathNodes[nextPos.y][nextPos.x].pPreviousNode = &pathNodes[currentPos.y][currentPos.x];
                 queue.push(pathNodes[nextPos.y][nextPos.x]);
             }
         }
     }
 
-    return {};
+    return path;
 }
+
+#define IS_PART2
 
 int main(int argc, char* argv[])
 {
     ClearMap();
-#if defined(USE_TEST_DATA)
-    SimulateFallingBytes(12);
-#else
-    SimulateFallingBytes(1024);
-#endif
-    auto path = FindPath(START_POS, END_POS);
+
+#if !defined(IS_PART2)
+    
+    SimulateFallingBytes(NUM_INITIAL_FALLEN_BYTES);
+    auto& path = FindPath(START_POS, END_POS);
     PrintMap(path);
 
     std::cout << "Path length: " << path.size() -1 << std::endl;
+    
+#else
+    
+    //lets try brutefore first, we simple simulate the falling bytes and check if the path is still reachable
+    SimulateFallingBytes(NUM_INITIAL_FALLEN_BYTES);
+    for (int i = NUM_INITIAL_FALLEN_BYTES; i < s_NumIncomingData; i++)
+    {
+        SimulateFallingBytes(i + 1, i);
+        const auto& path = FindPath(START_POS, END_POS);
+        if (path.empty())
+        {
+            s_Map[s_IncomingData[i].y][s_IncomingData[i].x] = FREE;
+            auto path = FindPath(START_POS, s_IncomingData[i]);
+            path.pop_back();
+            s_Map[s_IncomingData[i].y][s_IncomingData[i].x] = CORRUPTED;
+            PrintMap(path);
+            std::cout << "First byte that will prevent the exit from being reachable: " << s_IncomingData[i].x << ", " << s_IncomingData[i].y << " fallen after " << i << "ns" << std::endl;
+            break;
+        }
+    }
+    
+#endif
     
     return 0;
 }

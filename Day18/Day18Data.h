@@ -18,6 +18,7 @@ struct Vector2
 
 #if defined(USE_TEST_DATA)
 
+constexpr int NUM_INITIAL_FALLEN_BYTES = 12;
 constexpr int MAP_WIDTH = 7;
 constexpr int MAP_HEIGHT = 7;
 char s_Map[MAP_HEIGHT][MAP_WIDTH];
@@ -54,6 +55,7 @@ constexpr int s_NumIncomingData = std::size(s_IncomingData);
 
 #else
 
+constexpr int NUM_INITIAL_FALLEN_BYTES = 1024;
 constexpr int MAP_WIDTH = 71;
 constexpr int MAP_HEIGHT = 71;
 char s_Map[MAP_HEIGHT][MAP_WIDTH];
