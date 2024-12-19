@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
 
     while (low <= high)
     {
-        int mid = low + (high - low) / 2;
+        const int mid = low + (high - low) / 2;
         ClearMap();
         SimulateFallingBytes(mid + 1);
 
