@@ -15,22 +15,22 @@ constexpr const char* PATH_COLOR = "\033[32m";
 constexpr const char* CORRUPTED_COLOR = "\033[38;5;94m";
 constexpr const char* DEFAULT_COLOR = "\033[0m";
 
-void ClearMap()
+static void ClearMap()
 {
     memset(s_Map, FREE, sizeof(s_Map));
 }
 
-void SetTile(Vector2 pos, char tile)
+static void SetTile(const Vector2& pos, const char tile)
 {
     s_Map[pos.y][pos.x] = tile;
 }
 
-char GetTile(Vector2 pos)
+static char GetTile(const Vector2& pos)
 {
     return s_Map[pos.y][pos.x];
 }
 
-void SimulateFallingBytes(int endBit, int startBit = 0)
+static void SimulateFallingBytes(int endBit, int startBit = 0)
 {
     for (int i = startBit; i < endBit && i < s_NumIncomingData; i++)
     {
@@ -38,7 +38,7 @@ void SimulateFallingBytes(int endBit, int startBit = 0)
     }
 }
 
-void PrintMap(const std::vector<Vector2>& path)
+static void PrintMap(const std::vector<Vector2>& path)
 {
     for (int y = 0; y < MAP_HEIGHT; ++y)
     {
@@ -63,7 +63,7 @@ void PrintMap(const std::vector<Vector2>& path)
     std::cout << std::endl;
 }
 
-bool IsInBounds(Vector2 pos)
+static bool IsInBounds(const Vector2& pos)
 {
     return pos.x >= 0 && pos.x < MAP_WIDTH && pos.y >= 0 && pos.y < MAP_HEIGHT;
 }
@@ -163,23 +163,43 @@ int main(int argc, char* argv[])
     std::cout << "Path length: " << path.size() -1 << std::endl;
     
 #else
-    
-    //lets try brutefore first, we simple simulate the falling bytes and check if the path is still reachable
-    SimulateFallingBytes(NUM_INITIAL_FALLEN_BYTES);
-    for (int i = NUM_INITIAL_FALLEN_BYTES; i < s_NumIncomingData; i++)
+
+    // bruteforce++:
+    // Binary search approach to find the first byte that prevents the exit from being reachable
+    int low = NUM_INITIAL_FALLEN_BYTES;
+    int high = s_NumIncomingData - 1;
+    int result = -1;
+
+    while (low <= high)
     {
-        SimulateFallingBytes(i + 1, i);
+        int mid = low + (high - low) / 2;
+        ClearMap();
+        SimulateFallingBytes(mid + 1);
+
         const auto& path = FindPath(START_POS, END_POS);
-        if (path.empty())
+        if (path.empty()) //no path found, so we repeat with the lower half
         {
-            s_Map[s_IncomingData[i].y][s_IncomingData[i].x] = FREE;
-            auto path = FindPath(START_POS, s_IncomingData[i]);
-            path.pop_back();
-            s_Map[s_IncomingData[i].y][s_IncomingData[i].x] = CORRUPTED;
-            PrintMap(path);
-            std::cout << "First byte that will prevent the exit from being reachable: " << s_IncomingData[i].x << ", " << s_IncomingData[i].y << " fallen after " << i << "ns" << std::endl;
-            break;
+            result = mid;
+            high = mid - 1;
         }
+        else
+        {
+            low = mid + 1;
+        }
+    }
+
+    if (result != -1)
+    {
+        s_Map[s_IncomingData[result].y][s_IncomingData[result].x] = FREE;
+        auto path = FindPath(START_POS, s_IncomingData[result]);
+        path.pop_back();
+        s_Map[s_IncomingData[result].y][s_IncomingData[result].x] = CORRUPTED;
+        PrintMap(path);
+        std::cout << "First byte that will prevent the exit from being reachable: " << s_IncomingData[result].x << ", " << s_IncomingData[result].y << " fallen after " << result << "ns" << std::endl;
+    }
+    else
+    {
+        std::cout << "All bytes can fall without blocking the exit." << std::endl;
     }
     
 #endif
