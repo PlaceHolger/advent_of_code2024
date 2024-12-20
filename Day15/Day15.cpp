@@ -77,7 +77,7 @@ void FindRobotPosition()
     }
 }
 
-static Vector2 GetMoveDIrection(char move)
+static Vector2 GetMoveDirection(char move)
 {
     switch (move)
     {
@@ -98,7 +98,7 @@ static Vector2 GetMoveDIrection(char move)
 void MoveRobot(char move)
 {
     //new approach: the robot always just moves one step, if there is a box in front of it, it will move the box one step in the same direction
-    const Vector2 moveDir = GetMoveDIrection(move);
+    const Vector2 moveDir = GetMoveDirection(move);
     const Vector2 nextPos = s_RobotPosition + moveDir;
     if (GetTile(nextPos) == WALL)
         return;  //we cant move
