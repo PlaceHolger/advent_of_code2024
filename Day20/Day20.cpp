@@ -1,14 +1,15 @@
 // --- Day 20: Race Condition ---
 
-//#define USE_TEST_DATA
-constexpr int CHEAT_SAVE_THRESHOLD = 100; //how many picoseconds we want to save by using a cheat before we count it for the solution
+#define USE_TEST_DATA
+constexpr int CHEAT_SAVE_THRESHOLD = 50; //how many picoseconds we want to save by using a cheat before we count it for the solution
 
 #include "Day20Data.h"
 
-#include <cassert>
 #include <iostream>
 #include <queue>
 #include <vector>
+#include <unordered_map>
+#include <map>
 
 struct PathNode;
 
@@ -25,6 +26,15 @@ struct Vector2
     bool operator!=(const Vector2& vector2) const
     {
         return x != vector2.x || y != vector2.y;
+    }
+};
+
+template <>
+struct std::hash<Vector2>
+{
+    size_t operator()(const Vector2& v) const noexcept
+    {
+        return v.x * 1000 + v.y;
     }
 };
 
@@ -191,8 +201,17 @@ static std::vector<PathNode>& FindPath(Vector2 startPos, Vector2 endPos)
     return path;
 }
 
+std::map<int, int> debug_count_map;  //for debugging, we count the number of cheats for the saved steps
+
 static uint32_t FindCheats(std::vector<PathNode>& path, int savedSteps)
 {
+    //since we are going to check a lot of positions on the path, we transfer it to a unordered_map for faster lookup
+    std::unordered_map<Vector2, PathNode> pathMap;
+    for (const auto& node : path)
+    {
+        pathMap[node.pos] = node;
+    }
+    
     uint32_t numCheats = 0;
 
     //okay, we follow the path and check if we can cheat, if so, we add compare the saved steps with the threshold
@@ -210,17 +229,65 @@ static uint32_t FindCheats(std::vector<PathNode>& path, int savedSteps)
             //we can cheat, let's see how many steps we save (if any)
             int distanceWithCheat = currentNode.distance + 2;
             int distanceWithoutCheat = 0;
-            for (size_t j = i + 1; j < path.size(); j++) //we only need to check the remaining path, we never want to cheat backwards. This can probably be optimized by using a better structure to find nearby positions on the path without iterating over the whole path
+            if (pathMap.find(cheatPos) != pathMap.end())
             {
-                if (path[j].pos == cheatPos)
-                {
-                    distanceWithoutCheat = path[j].distance;
-                    break;
-                }
+                distanceWithoutCheat = pathMap[cheatPos].distance; //original distance, might also include positions back on the track where we came from.
             }
             if (distanceWithoutCheat - distanceWithCheat >= savedSteps)
             {
                 numCheats++;
+            }
+        }
+    }
+
+    return numCheats;
+}
+
+static uint64_t FindCheatsN(std::vector<PathNode>& path, const int savedSteps, const int numFieldsToCheck)
+{
+    //since we are going to check a lot of positions on the path, we transfer it to a unordered_map for faster lookup
+    std::unordered_map<Vector2, PathNode> pathMap;
+    for (const auto& node : path)
+    {
+        pathMap[node.pos] = node;
+    }
+    
+    //okay almost the same as FindCheat, but we are allowed to jump to any field that is reachable in numFieldsToCheck steps (manhattan distance). we can also use less steps
+    uint64_t numCheats = 0;
+
+    //again we follow the path and for each node we check all reachable nodes in numFieldsToCheck steps
+    for (size_t i = 0; i < path.size(); i++)
+    {
+        const auto& currentNode = path[i];
+        Vector2 xRangeToCheck = {std::max(0, currentNode.pos.x - numFieldsToCheck), std::min(MAP_WIDTH, currentNode.pos.x + numFieldsToCheck)};
+        Vector2 yRangeToCheck = {std::max(0, currentNode.pos.y - numFieldsToCheck), std::min(MAP_HEIGHT, currentNode.pos.y + numFieldsToCheck)};
+
+        //check all reachable nodes in range
+        for (int y = yRangeToCheck.x; y < yRangeToCheck.y; y++)
+        {
+            for (int x = xRangeToCheck.x; x < xRangeToCheck.y; x++)
+            {
+                //check manhattan distance
+                const int manhattenDistance = abs(x - currentNode.pos.x) + abs(y - currentNode.pos.y);
+                if (manhattenDistance > numFieldsToCheck)
+                    continue;
+                
+                Vector2 cheatPos = {x, y};
+                if (!IsValidMovePos(cheatPos)) //the target must be a valid move
+                    continue;
+
+                //we can cheat, let's see how many steps we save (if any)
+                int distanceWithCheat = currentNode.distance + manhattenDistance;
+                int distanceWithoutCheat = 0;
+                if (pathMap.find(cheatPos) != pathMap.end())
+                {
+                    distanceWithoutCheat = pathMap[cheatPos].distance; //original distance, might also include positions back on the track where we came from.
+                }
+                if (distanceWithoutCheat - distanceWithCheat >= savedSteps)
+                {
+                    numCheats++;
+                    debug_count_map[distanceWithoutCheat - distanceWithCheat] = debug_count_map[distanceWithoutCheat - distanceWithCheat] + 1;
+                }
             }
         }
     }
@@ -233,8 +300,14 @@ int main(int argc, char* argv[])
     FindStartAndEnd();
     auto& path = FindPath(s_StartPos, s_EndPos);
     //okay, now we have the (only) path to the end, let's find all possible cheat positions
-    int numCheats = FindCheats(path, CHEAT_SAVE_THRESHOLD);
-    PrintMap(path);
+    //int numCheats = FindCheats(path, CHEAT_SAVE_THRESHOLD);
+    uint64_t numCheats = FindCheatsN(path, CHEAT_SAVE_THRESHOLD, 20);
+    //PrintMap(path);
+
+    for (const auto& value : debug_count_map)
+    {
+        std::cout << "Key: " << value.first << " Value: " << value.second << std::endl;
+    }
     
     std::cout << "Number of cheats: " << numCheats << std::endl;
     

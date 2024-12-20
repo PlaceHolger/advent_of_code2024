@@ -168,4 +168,4 @@ static constexpr char s_Map[][142] = {
 #endif
 
 constexpr int MAP_HEIGHT = std::size(s_Map);
-constexpr int MAP_WIDTH = std::size(s_Map[0]);
+constexpr int MAP_WIDTH = std::size(s_Map[0]) - 1;
