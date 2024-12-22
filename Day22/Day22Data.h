@@ -2,10 +2,18 @@
 #include <iterator>
 
 #if defined USE_TEST_DATA
-constexpr int64_t data[] =
+
+#if IS_PART1
+constexpr int data[] =
 { 1, 10, 100, 2024 };
 #else
-constexpr int64_t data[] =
+constexpr int data[] =
+{ 1, 2, 3, 2024 };
+#endif
+
+
+#else
+constexpr int data[] =
 { 3163651,
 11534532,
 980758,
