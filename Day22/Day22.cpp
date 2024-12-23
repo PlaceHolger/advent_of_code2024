@@ -25,10 +25,10 @@ static int CalcNextSecretNumber(int64_t secretNumber)  //our pseudorandom number
 static int hashChanges(const std::list<int8_t>& changesList)  //compute a hash from the last 4 changes
 {
     auto it = changesList.begin();
-    uint8_t num1 = *it++;
-    uint8_t num2 = *it++;
-    uint8_t num3 = *it++;
-    uint8_t num4 = *it;
+    const uint8_t num1 = *it++;
+    const uint8_t num2 = *it++;
+    const uint8_t num3 = *it++;
+    const uint8_t num4 = *it;
     //shift the numbers to the correct position
     const int hash = num1 | (num2 << 8) | (num3 << 16) | (num4 << 24);
     
@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
         {
             const int newSecret = CalcNextSecretNumber(lastSecret);
             const int8_t offer = newSecret % 10;
-            int8_t change = offer - lastSecret % 10;
+            const int8_t change = offer - lastSecret % 10;
             changesQueue.push_back(change);            
             lastSecret = newSecret;
         }
@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
         {
             const int newSecret = CalcNextSecretNumber(lastSecret);
             const int8_t offer = newSecret % 10;
-            int8_t change = offer - lastSecret % 10;
+            const int8_t change = offer - lastSecret % 10;
             changesQueue.push_back(change);
             assert(changesQueue.size() == 4);
             int hash = hashChanges(changesQueue);
