@@ -1,73 +1,15 @@
 // --- Day 23: LAN Party ---
-//     As The Historians wander around a secure area at Easter Bunny HQ, you come across posters for a LAN party scheduled for today! Maybe you can find it; you connect to a nearby datalink port and download a map of the local network (your puzzle input).
-//
-//     The network map provides a list of every connection between two computers. For example:
-//
-//     kh-tc
-//     qp-kh
-//     de-cg
-//     ka-co
-//     yn-aq
-//     qp-ub
-//     cg-tb
-//     vc-aq
-//     tb-ka
-//     wh-tc
-//     yn-cg
-//     kh-ub
-//     ta-co
-//     de-co
-//     tc-td
-//     tb-wq
-//     wh-td
-//     ta-ka
-//     td-qp
-//     aq-cg
-//     wq-ub
-//     ub-vc
-//     de-ta
-//     wq-aq
-//     wq-vc
-//     wh-yn
-//     ka-de
-//     kh-ta
-//     co-tc
-//     wh-qp
-//     tb-vc
-//     td-yn
-//     Each line of text in the network map represents a single connection; the line kh-tc represents a connection between the computer named kh and the computer named tc. Connections aren't directional; tc-kh would mean exactly the same thing.
-//
-//     LAN parties typically involve multiplayer games, so maybe you can locate it by finding groups of connected computers. Start by looking for sets of three computers where each computer in the set is connected to the other two computers.
-//
-//     In this example, there are 12 such sets of three inter-connected computers:
-//
-//     aq,cg,yn
-//     aq,vc,wq
-//     co,de,ka
-//     co,de,ta
-//     co,ka,ta
-//     de,ka,ta
-//     kh,qp,ub
-//     qp,td,wh
-//     tb,vc,wq
-//     tc,td,wh
-//     td,wh,yn
-//     ub,vc,wq
-//     If the Chief Historian is here, and he's at the LAN party, it would be best to know that right away. You're pretty sure his computer's name starts with t, so consider only sets of three computers where at least one computer's name starts with t. That narrows the list down to 7 sets of three inter-connected computers:
-//
-//     co,de,ta
-//     co,ka,ta
-//     de,ka,ta
-//     qp,td,wh
-//     tb,vc,wq
-//     tc,td,wh
-//     td,wh,yn
-//     Find all the sets of three inter-connected computers. How many contain at least one computer with a name that starts with t?
 
-#include <cstdio>
 #include <unordered_map>
 
 //#define USE_TEST_DATA
+#define IS_PART1
+
+#include <iostream>
+#include <set>
+#include <string>
+#include <unordered_set>
+
 #include "Day23Data.h"
 
 struct Computer
@@ -80,7 +22,7 @@ struct Computer
 
     static int CreateComputerIndex(const char* computer)
     {
-        return static_cast<uint8_t>(computer[0] - 'a') << 8 | static_cast<uint8_t>(computer[1] - 'a') ;
+        return static_cast<uint8_t>(computer[0] - 'a') << 8 | static_cast<uint8_t>(computer[1] - 'a');
     }
 
     // const static char* GetComputerName(int computer)  //not needed currently, because we simply store the name in addition
@@ -96,7 +38,7 @@ struct Computer
     {
         return id == other.id;
     }
-    
+
     int id;
     char name[2]; //can probably be optimized away, but makes debugging easier
 };
@@ -114,7 +56,7 @@ namespace std
     };
 }
 
-static std::unordered_map<Computer, std::vector<Computer>> connections;  //computer, list of connected computers
+static std::unordered_map<Computer, std::vector<Computer>> connections; //computer, list of connected computers
 
 void CreateConnections(const char** arr)
 {
@@ -132,25 +74,29 @@ static int FindSetsOfThree()
 {
     int numSetsOfThree = 0;
     //for each computer that starts with t we simply check all connected computers if they have a connection to another computer that has then a connection to first computer
-    
+
     for (const auto& connection : connections)
     {
         const auto& firstComputer = connection.first;
         const auto& firstConnections = connection.second;
         //if (firstComputer.name[0] == 't') // we only want to check sets that contain a computer that starts with 't' fix me...
         {
-            for (const auto& secondComputer : firstConnections)  //for all connected computers of the first computer
+            for (const auto& secondComputer : firstConnections) //for all connected computers of the first computer
             {
                 const auto& secondConnections = connections[secondComputer];
-                for (const auto& thirdComputer : secondConnections)  //for all connected computers of the connected computer
+                for (const auto& thirdComputer : secondConnections)
+                //for all connected computers of the connected computer
                 {
                     const auto& thirstConnections = connections[thirdComputer];
-                    for (const auto& thirdConnection : thirstConnections) //for all connected computers of the connected computer of the first computer
+                    for (const auto& thirdConnection : thirstConnections)
+                    //for all connected computers of the connected computer of the first computer
                     {
                         if (thirdConnection.id == firstComputer.id) //we found a set of 3
                         {
-                            const bool anyComputerStartsWithT = firstComputer.name[0] == 't' || secondComputer.name[0] == 't' || thirdComputer.name[0] == 't';
-                            if (anyComputerStartsWithT && firstComputer.id < secondComputer.id && secondComputer.id < thirdComputer.id)
+                            const bool anyComputerStartsWithT = firstComputer.name[0] == 't' || secondComputer.name[0]
+                                == 't' || thirdComputer.name[0] == 't';
+                            if (anyComputerStartsWithT && firstComputer.id < secondComputer.id && secondComputer.id <
+                                thirdComputer.id)
                             {
                                 //printf("Found set of 3: %c%c, %c%c, %c%c\n", firstComputer.name[0], firstComputer.name[1], secondComputer.name[0], secondComputer.name[1], thirdComputer.name[0], thirdComputer.name[1]);
                                 numSetsOfThree++;
@@ -164,11 +110,83 @@ static int FindSetsOfThree()
     return numSetsOfThree;
 }
 
+//okay, i confess, i did not find this solution myself: https://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm
+// Helper function to run Bron-Kerbosch recursively 
+void bronKerbosch(const std::unordered_set<Computer>& R,
+                  std::unordered_set<Computer>& P,
+                  std::unordered_set<Computer>& X,
+                  std::vector<std::unordered_set<Computer>>& cliques)
+{
+    if (P.empty() && X.empty())
+    {
+        cliques.push_back(R); // Found a maximal clique
+        return;
+    }
+
+    auto P_copy = P; // Copy of P to iterate safely
+    for (const auto& v : P_copy)
+    {
+        std::unordered_set<Computer> newR = R, newP, newX;
+        newR.insert(v);
+
+        for (const auto& neighbor : connections[v])
+        {
+            if (P.find(neighbor) != P.end())
+                newP.insert(neighbor);
+            if (X.find(neighbor) != X.end())
+                newX.insert(neighbor);
+        }
+
+        bronKerbosch(newR, newP, newX, cliques);
+
+        P.erase(v); // Remove v from P
+        X.insert(v); // Add v to X
+    }
+}
+
+std::unordered_set<Computer> findLargestClique()
+{
+    std::unordered_set<Computer> R, P, X;
+    for (const auto& element : connections)
+    {
+        P.insert(element.first);
+    }
+
+    std::vector<std::unordered_set<Computer>> cliques;
+    bronKerbosch(R, P, X, cliques);
+
+    // Find the largest clique
+    std::unordered_set<Computer> largestClique;
+    for (const auto& clique : cliques)
+    {
+        if (clique.size() > largestClique.size())
+        {
+            largestClique = clique;
+        }
+    }
+
+    return largestClique;
+}
+
+
 int main(int argc, char* argv[])
 {
     CreateConnections(data);
+
+#if IS_PART1
     int count = FindSetsOfThree();
     printf("Sets of three: %d\n", count);
-    
+#else
+    auto largestClique = findLargestClique();
+    //sort the computer names alphabetically, simply by adding their names to a set
+    std::set<std::string> sortedNames;
+    for (const auto& computer : largestClique)
+        sortedNames.insert(std::string(computer.name, 2));
+    std::string result;
+    for (const auto& name : sortedNames)
+        result += name + ",";
+    std::cout << "Largest clique: " << result << '\n';
+#endif
+
     return 0;
 }
